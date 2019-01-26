@@ -2,4 +2,5 @@
     <string name="app_name">Test</string>
     <string name="edit_message">Enter a message</string>
     <string name="button_send">Send</string>
+    <string name="missing_audio_permission">No audio record permission given</string>
 </resources>
