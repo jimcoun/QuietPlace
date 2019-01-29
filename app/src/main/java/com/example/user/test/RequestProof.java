@@ -84,7 +84,7 @@ public class RequestProof extends AppCompatActivity {
         FrameTransmitterConfig transmitterConfig;
         try {
             transmitterConfig = new FrameTransmitterConfig(
-                    this, "audible");
+                    this, "ultrasonic-experimental");
             transmitter = new FrameTransmitter(transmitterConfig);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -97,7 +97,7 @@ public class RequestProof extends AppCompatActivity {
         FrameReceiverConfig receiverConfig;
         try {
             receiverConfig = new FrameReceiverConfig(
-                    this, "audible");
+                    this, "ultrasonic-experimental");
             receiver = new FrameReceiver(receiverConfig);
         } catch (IOException e) {
             throw new RuntimeException(e);

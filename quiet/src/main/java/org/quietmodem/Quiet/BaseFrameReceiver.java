@@ -50,6 +50,7 @@ public abstract class BaseFrameReceiver {
 
     public void close() {
         this.nativeClose();
+        nativeFree();
     }
 
     public void terminate(int urgency) {
