@@ -3,12 +3,12 @@ import org.apache.tools.ant.taskdefs.condition.Os
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "26.0.2"
+    compileSdkVersion 27
+    buildToolsVersion "28.0.3"
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 23
+        minSdkVersion 21
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -36,7 +36,7 @@ dependencies {
     androidTestImplementation 'com.android.support:support-annotations:23.0.0'
     androidTestImplementation 'com.android.support.test:rules:0.5'
     androidTestImplementation 'com.android.support.test:runner:0.5'
-    implementation 'com.android.support:appcompat-v7:23.1.1'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
 }
 
 def getNdkDir() {

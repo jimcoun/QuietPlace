@@ -29,4 +29,7 @@ dependencies {
     implementation files('libs/openlocationcode-1.0.2.jar')
     implementation 'com.google.android.gms:play-services-maps:16.0.0'
     implementation project(':quiet')
+    implementation files('libs/jackson-core-2.9.8.jar')
+    implementation files('libs/jackson-databind-2.9.8.jar')
+    implementation files('libs/jackson-annotations-2.9.8.jar')
 }
