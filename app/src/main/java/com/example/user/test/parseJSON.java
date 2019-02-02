@@ -1,48 +1,59 @@
-package messages.example.user.test;
+package com.example.user.test;
 
-import com.example.user.test.Staff;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Object2JSON {
 
-    public static void main(String[] args) {
-        Object2JSON obj = new Object2JSON();
-        obj.run();
-    }
+public class parseJSON {
 
-    private void run() {
+
+    public String toJSON(Object obj){
         ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
 
-        Staff staff = createDummyObject();
-
         try {
-            // Convert object to JSON string and save into a file directly
-            mapper.writeValue(new File("D:\\staff.json"), staff);
 
             // Convert object to JSON string
-            String jsonInString = mapper.writeValueAsString(staff);
-            System.out.println(jsonInString);
-
-            // Convert object to JSON string and pretty print
-            jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(staff);
-            System.out.println(jsonInString);
+            String jsonInString = mapper.writeValueAsString(obj);
+            return jsonInString;
 
         } catch (JsonGenerationException e) {
             e.printStackTrace();
+            return "Error";
         } catch (JsonMappingException e) {
             e.printStackTrace();
+            return "Error";
         } catch (IOException e) {
             e.printStackTrace();
+            return "Error";
+        }
+    }
+
+    public Object fromJSON(String jsonString, Class classType){
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+
+        try {
+
+            return mapper.readValue(jsonString, classType); // Returns object created from JSON
+
+
+        } catch (JsonGenerationException e) {
+            e.printStackTrace();
+            return new Object();
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+            return new Object();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Object();
         }
     }
 
@@ -65,5 +76,4 @@ public class Object2JSON {
         return staff;
 
     }
-
 }

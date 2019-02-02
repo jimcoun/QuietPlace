@@ -106,12 +106,18 @@ public class RequestProof extends AppCompatActivity {
         }
     }
 
-    private void sendMessage() {
-        try {
-            transmitter.send(plusCode.getBytes());
-        } catch (IOException e) {
-            // our message might be too long or the transmit queue full
-        }
+//    private void sendMessage() {
+//        try {
+//            transmitter.send(plusCode.getBytes());
+//        } catch (IOException e) {
+//            // our message might be too long or the transmit queue full
+//        }
+//    }
+
+    private void sendMessage(){
+        ProverProtocol pp = new ProverProtocol(this, "ygu", "ighy");
+
+        pp.run();
     }
 
     private void receiveMessage() {

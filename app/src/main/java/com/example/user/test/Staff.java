@@ -1,4 +1,4 @@
-package messages.example.user.test;
+package com.example.user.test;
 
 import java.util.List;
 

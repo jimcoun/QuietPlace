@@ -1,5 +1,6 @@
 package messages.example.user.test;
 
+import com.example.user.test.Staff;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerationException;
