@@ -16,6 +16,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    buildToolsVersion '28.0.3'
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
@@ -32,4 +37,6 @@ dependencies {
     implementation files('libs/jackson-core-2.9.8.jar')
     implementation files('libs/jackson-databind-2.9.8.jar')
     implementation files('libs/jackson-annotations-2.9.8.jar')
+    implementation 'io.reactivex:rxandroid:1.2.1'
+    implementation 'io.reactivex:rxjava:1.2.1'
 }

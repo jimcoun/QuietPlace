@@ -1,14 +1,16 @@
 package com.example.user.test;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.util.List;
 
+//@JsonPropertyOrder({"name", "age", "position", "salary"})
 public class Staff {
 
     private String name;
     private int age;
     private String position;
     private double salary;
-    private List<String> skills;
+    // private List<String> skills;
 
     public void setName(String name){
         this.name = name;
@@ -26,13 +28,13 @@ public class Staff {
         this.salary = salary;
     }
 
-    public void setSkills(List<String> skills){
+    /*public void setSkills(List<String> skills){
         this.skills = skills;
     }
-
     @Override
     public String toString(){
         return String.format("Name: %s%nAge: %d%nPosition: %s%nSalary: %.2f%nSkills: %s%n", name, age, position, salary, skills);
     }
+    */
 
 }

@@ -1,5 +1,7 @@
 package com.example.user.test;
 
+import android.util.Base64;
+
 import java.io.FileOutputStream;
 import java.io.Writer;
 import java.io.File;
@@ -19,7 +21,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -44,9 +45,11 @@ public class Crypto {
         System.out.println(fileSha256("78.jpg"));
 
         try {
-            PrivateKey privateKey = getPrivate("kleidib.key");
-            PublicKey publicKey = getPublic("kleidib.pub");
+//            PrivateKey privateKey = getPrivate("kleidib.key");
+//            PublicKey publicKey = getPublic("kleidib.pub");
 
+            PrivateKey privateKey = getPrivateFromString("MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAMxvGtxgvz3Q8cjsuzvHZJwP4aiNmA9Bp5uJidAq1WMljLrmmJAvOSy/FV7aV0uhSA/vNQGy72j8bRgax734jhvWkGgVkhM8xkkAYYz1anI/90xjb1aV0s5C1gS4O8wjxAusdtv8C3tCK+Vqy8Lj/vXUUOiTiBxs8o4YZ9k173B5AgMBAAECgYA9H78tQzQK/I0+YSG+RujbDJiQ9/0OGrhNdfshpZz1rwV74HSfL69tpJh0Kt5M+6T7Nq9nmaOhhU/tFBzCvS1ntfNFLFnVCLA1LfYdJwnVWAmpSRj6+MM7F0O7d8OP4WjW3HwxAdLFyNGECQvCiBxp4IHoRv21HYV5tRwHvo2efQJBAPxPWoDcSor8d3UZsZGXfNldJrE53Ddm2HFAhCE9mWH3tiIS5Cn/tdzvfP8VkN0aM0pZg1v1+G5Fny3m8VNMij8CQQDPbIEQP5wp5paiPo20wlk6j7sG9Ih+tvPkSByCQlWnH79wCeGpreugsFg9Tx8fy5xdhgl6pP3Kg5tprWfU+qdHAkBewN5YLmLAN3gVPgT1jFKSvuzc+cG9/J2kSnpUkXGc3Q5FVZriOuntgvMKSOsSXdiNP3iZfJJDt1nEP0q54bC5AkAtkPuFU0P+HG7I847zv6IUcFC4xW1a0NwhMQo6P1JLpXjLpxAQ02ko4rRvu3rt5C/Uh8Z7T9WE8IZqn7JooiuvAkAva++UwW2+KsNfR6JdyHY5Y4EMJmfIE2y6tPpR13RCwycjsnAsSEjG5lmdYe01gCrZzFN8qZ/Y0esn4/0RqTJu");
+            PublicKey publicKey = getPublicFromString("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDMbxrcYL890PHI7Ls7x2ScD+GojZgPQaebiYnQKtVjJYy65piQLzksvxVe2ldLoUgP7zUBsu9o/G0YGse9+I4b1pBoFZITPMZJAGGM9WpyP/dMY29WldLOQtYEuDvMI8QLrHbb/At7QivlasvC4/711FDok4gcbPKOGGfZNe9weQIDAQAB");
             String msg = "This is clear text!";
             String encrypted = encryptText(msg, privateKey);
 
@@ -211,12 +214,12 @@ public class Crypto {
 
         // ------Base64 format------
         // Save private key
-        Base64.Encoder encoder = Base64.getEncoder();
-
+        /*
         try {
             Writer out = new FileWriter(fileName + ".key");
             out.write("-----BEGIN RSA PRIVATE KEY-----\n");
-            out.write(encoder.encodeToString(pvt));
+            out.write(Base64.encodeToString(pvt, Base64.DEFAULT));
+            System.out.println("Private key: " + Base64.encodeToString(pvt, Base64.DEFAULT));
             out.write("\n-----END RSA PRIVATE KEY-----\n");
             out.close();
         } catch (IOException ioexc) {
@@ -227,25 +230,45 @@ public class Crypto {
             // Save public key
             Writer out = new FileWriter(fileName + ".pub");
             out.write("-----BEGIN RSA PUBLIC KEY-----\n");
-            out.write(encoder.encodeToString(pub));
+            out.write(Base64.encodeToString(pub, Base64.DEFAULT));
+            System.out.println("Public key: " + Base64.encodeToString(pub, Base64.DEFAULT));
             out.write("\n-----END RSA PUBLIC KEY-----\n");
             out.close();
         } catch (IOException ioexc) {
             System.out.println("File error!");
         }
+        */
+        System.out.println("Private key: " + Base64.encodeToString(pvt, Base64.DEFAULT));
+        System.out.println("Public key: " + Base64.encodeToString(pub, Base64.DEFAULT));
     }
 
     // Asymmetric (RSA) cryptography helpers
 
-    public static PrivateKey getPrivate(String fileΝame) throws Exception {
-        byte[] keyBytes = Files.readAllBytes(new File(fileΝame).toPath());
+    // Get keys from file
+    public static PrivateKey getPrivate(String fileName) throws Exception {
+        byte[] keyBytes = Files.readAllBytes(new File(fileName).toPath());
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         return kf.generatePrivate(spec);
     }
 
-    public static PublicKey getPublic(String fileΝame) throws Exception {
-        byte[] keyBytes = Files.readAllBytes(new File(fileΝame).toPath());
+    public static PublicKey getPublic(String fileName) throws Exception {
+        byte[] keyBytes = Files.readAllBytes(new File(fileName).toPath());
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePublic(spec);
+    }
+
+    // Get keys from Strings in Base64 encoding
+    public static PrivateKey getPrivateFromString(String pvt) throws Exception {
+        byte[] keyBytes = Base64.decode(pvt, Base64.DEFAULT);
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePrivate(spec);
+    }
+
+    public static PublicKey getPublicFromString(String pub) throws Exception {
+        byte[] keyBytes = Base64.decode(pub, Base64.DEFAULT);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         return kf.generatePublic(spec);
@@ -255,9 +278,7 @@ public class Crypto {
             UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, key);
-        Base64.Encoder encoder = Base64.getEncoder(); // Create Base64 encoder
-        // return Base64.encodeBase64String(cipher.doFinal(msg.getBytes("UTF-8")));
-        return encoder.encodeToString(cipher.doFinal(msg.getBytes("UTF-8")));
+        return Base64.encodeToString(cipher.doFinal(msg.getBytes("UTF-8")), Base64.DEFAULT);
 
     }
 
@@ -265,9 +286,8 @@ public class Crypto {
             IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, key);
-        Base64.Decoder decoder = Base64.getDecoder(); // Create Base64 decoder
-        // return new String(cipher.doFinal(Base64.decodeBase64(msg)), "UTF-8");
-        return new String(cipher.doFinal(decoder.decode(msg)), "UTF-8");
+        return new String(cipher.doFinal(Base64.decode(msg, Base64.DEFAULT)), "UTF-8");
+
     }
 
     // Signatures SHA-256 with RSA

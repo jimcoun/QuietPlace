@@ -1,7 +1,6 @@
 package com.example.user.test;
 
 import java.security.SecureRandom;
-import static com.example.user.test.Crypto.sha256;
 
 
 public class LocationChain {
@@ -9,7 +8,7 @@ public class LocationChain {
     // MAIN for tests
 
     public static void main(String[] args) {
-        String K0 = randomGenerator();
+        String K0 = random();
         System.out.printf("K0 = %s%n", K0);
 
         String L0 = "8G95XQHMM6";
@@ -28,16 +27,23 @@ public class LocationChain {
 
     // Method that returns random number K0
 
+    // Useless method to be deleted
+    /*
     public static String randomGenerator() {
         SecureRandom random = new SecureRandom();
         int randomInteger = random.nextInt(1000000);
         String result = Integer.toHexString(randomInteger);
         return result;
     }
+    */
+
+    public static String random() {
+        return Crypto.random256();
+    }
 
     // Method that creates the chain head K given L0, K0
 
-    public static String[] buildChain(String K0, String L0) {
+    public static String[] buildChain(String K0, String L0){
 
         // !!! Need to check the validity of L0 using plus codes library
 
@@ -50,7 +56,7 @@ public class LocationChain {
         int i = 1;
         while (currentL.length() >= 2) {
             String conc = Kchain[i-1].concat(currentL);
-            Kchain[i] = sha256(conc);
+            Kchain[i] = Crypto.sha256(conc);
             currentL = currentL.substring(0, currentL.length() - 2);
             System.out.println(currentL);
 
@@ -67,7 +73,7 @@ public class LocationChain {
 
         while (currentL.length()>=2){
             String conc = currentK.concat(currentL);
-            currentK = sha256(conc);
+            currentK = Crypto.sha256(conc);
             currentL = currentL.substring(0, currentL.length() - 2);
             System.out.println(currentK);
 

@@ -11,7 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class parseJSON {
+public class ParseJSON {
+
+    // private
 
 
     public String toJSON(Object obj){
@@ -36,18 +38,18 @@ public class parseJSON {
         }
     }
 
-    public Object fromJSON(String jsonString, Class classType){
+    public Object fromJSON(String jsonString, Class classType) throws Exception{
         ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
 
-        try {
+        // try {
 
             return mapper.readValue(jsonString, classType); // Returns object created from JSON
 
-
+        /*
         } catch (JsonGenerationException e) {
             e.printStackTrace();
-            return new Object();
+            return new classType.getConstructor();
         } catch (JsonMappingException e) {
             e.printStackTrace();
             return new Object();
@@ -55,25 +57,20 @@ public class parseJSON {
             e.printStackTrace();
             return new Object();
         }
-    }
-
-    private Staff createDummyObject() {
-
-        Staff staff = new Staff();
-
-        staff.setName("mkyong");
-        staff.setAge(33);
-        staff.setPosition("Developer");
-        staff.setSalary(1501.23);
-
-        List<String> skills = new ArrayList<>();
-        skills.add("java");
-        skills.add("python");
-
-        staff.setSkills(skills);
-
-
-        return staff;
+        */
 
     }
+
+    public ProtocolConfig fromJSON(String jsonString){
+        try {
+            return (ProtocolConfig) fromJSON(jsonString, ProtocolConfig.class);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return new ProtocolConfig();
+
+        }
+}
+
+
 }

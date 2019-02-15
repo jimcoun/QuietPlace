@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private double longitude;
     private double accuracy;
     private String plusCode;
+    private String plusCodeClean;
 
     private TextView statusText;
     private TextView latitudeText;
@@ -236,13 +237,25 @@ public class MainActivity extends AppCompatActivity {
 
         plusCode = code.getCode(); // Extract plus code from the object
 
-        plusCodeText.setText(plusCode); // Display plus code
+        // Check the validity of the code
+        if(OpenLocationCode.isValidCode(plusCode)) {
+            plusCodeText.setText(plusCode); // Display plus code
+            // Delete "+" sign
+            StringBuilder sb = new StringBuilder(plusCode);
+            sb.deleteCharAt(8);
+            plusCodeClean = sb.toString();
+        }
+        else{
+            plusCodeText.setText("Cannot convert!"); // Display error
+            plusCodeClean = "0000000000";
+        }
+
     }
 
     public void startProofRequest(View view){
         Intent intent = new Intent (this, RequestProof.class);
         Bundle extras = new Bundle();
-        extras.putString("EXTRA_PLUS_CODE", plusCode);
+        extras.putString("EXTRA_PLUS_CODE", plusCodeClean);
         intent.putExtras(extras);
         startActivity(intent);
 

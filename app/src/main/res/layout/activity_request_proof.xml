@@ -42,7 +42,17 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="112dp"
-        android:text="TextView"
+        android:text="Received text here"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/plusCodeText" />
+
+    <TextView
+        android:id="@+id/receivedStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:text="Status here"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/receivedText" />
 </android.support.constraint.ConstraintLayout>

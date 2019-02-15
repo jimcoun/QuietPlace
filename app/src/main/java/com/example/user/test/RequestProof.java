@@ -18,17 +18,29 @@ import org.quietmodem.Quiet.FrameReceiverConfig;
 import org.quietmodem.Quiet.FrameTransmitter;
 import org.quietmodem.Quiet.FrameTransmitterConfig;
 import org.quietmodem.Quiet.ModemException;
+import org.w3c.dom.Text;
+
+import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+import rx.subscriptions.Subscriptions;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
 public class RequestProof extends AppCompatActivity {
 
     private String plusCode;
     private FrameTransmitter transmitter; // Transmitter object
     private FrameReceiver receiver;
+    private Subscription frameSubscription = Subscriptions.empty();
+    private TextView textView; // The plus code
+    private TextView receivedText; // The message received
+    private TextView receivedStatus; // The status of the reception
 
     private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
+    private Protocol protocolInstance;
 
 
 
@@ -42,15 +54,20 @@ public class RequestProof extends AppCompatActivity {
         Bundle extras = intent.getExtras();
         plusCode = extras.getString("EXTRA_PLUS_CODE");
 
-        TextView textView = findViewById(R.id.plusCodeText);
+        textView = findViewById(R.id.plusCodeText);
+        receivedText = findViewById(R.id.receivedText);
+        receivedStatus = findViewById(R.id.receivedStatus);
+
         textView.setText(plusCode);
 
-        setupTransmitter();
-        setupReceiver();
+
+        // proverProtocol = new ProverProtocol(this, plusCode); // Instantiate prover protocol
+//        setupTransmitter();
+//        setupReceiver();
         findViewById(R.id.sendButton).setOnClickListener(new View.OnClickListener() { // Find the transmit button
             @Override
             public void onClick(View v) {  // What happens when you click the button
-                handleSendClick();
+                sendMessage();
             }
         });
 
@@ -71,7 +88,7 @@ public class RequestProof extends AppCompatActivity {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // subscribeToFrames();
+                     // subscribeToFrames();
                 } else {
                     showMissingAudioPermissionToast();
                     finish();
@@ -80,6 +97,7 @@ public class RequestProof extends AppCompatActivity {
         }
     }
 
+    /*
     private void setupTransmitter() {
         FrameTransmitterConfig transmitterConfig;
         try {
@@ -94,62 +112,46 @@ public class RequestProof extends AppCompatActivity {
     }
 
     private void setupReceiver() {
-        FrameReceiverConfig receiverConfig;
-        try {
-            receiverConfig = new FrameReceiverConfig(
-                    this, "ultrasonic-experimental");
-            receiver = new FrameReceiver(receiverConfig);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ModemException e) {
-            throw new RuntimeException(e);
+        if (hasRecordAudioPersmission()) {
+            subscribeToFrames();
+        } else {
+            requestPermission();
         }
     }
 
-//    private void sendMessage() {
-//        try {
-//            transmitter.send(plusCode.getBytes());
-//        } catch (IOException e) {
-//            // our message might be too long or the transmit queue full
-//        }
-//    }
+    private void subscribeToFrames() {
+        frameSubscription.unsubscribe();
+        frameSubscription = FrameReceiverObservable.create(this, "ultrasonic-experimental").subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(buf -> {
+            receivedText.setText(new String(buf, Charset.forName("UTF-8")));
+            Long time = System.currentTimeMillis() / 1000;
+            String timestamp = time.toString();
+            receivedStatus.setText("Received " + buf.length + " @" + timestamp);
+        }, error -> {
+            receivedStatus.setText("error " + error.toString());
+        });
+    }
+    */
 
     private void sendMessage(){
-        ProverProtocol pp = new ProverProtocol(this, "ygu", "ighy");
 
-        pp.run();
+        protocolInstance = new ProverProtocol(this, plusCode);
+        protocolInstance.runProtocol();
     }
 
-    private void receiveMessage() {
-        receiver.setBlocking(1, 0);
 
-        byte[] buf = new byte[1024];
-        long recvLen = 0;
-        try {
-            recvLen = receiver.receive(buf);
-        } catch (IOException e) {
-            // read timed out
-        }
-
-
-        try {
-            String receivedString = new String(buf, "UTF-8");
-            TextView receivedText = findViewById(R.id.receivedText);
-            receivedText.setText(receivedString);
-        }
-        catch(UnsupportedEncodingException e){  }
-    }
-
+    /*
     private void handleSendClick() {
         if (transmitter == null) {
             setupTransmitter();
         }
         sendMessage();
     }
-
+    */
     private void handleReceiveClick() {
-        receiveMessage();
+        protocolInstance = new WitnessProtocol(this, plusCode);
+        protocolInstance.runProtocol();
     }
+
 
     // Record audio permission methods
     boolean hasRecordAudioPersmission() {
