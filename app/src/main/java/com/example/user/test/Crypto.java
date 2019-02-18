@@ -97,6 +97,26 @@ public class Crypto {
 
     }
 
+    public static String sha256Base64(String data) {
+
+        try {
+            // Creating the MessageDigest object
+            MessageDigest md = MessageDigest.getInstance("SHA-256"); // Use SHA-256 algorithm
+
+            // Passing data to the created MessageDigest Object
+            md.update(data.getBytes());
+
+            // Compute the message digest
+            byte[] digest = md.digest();
+
+            return Base64.encodeToString(digest, Base64.DEFAULT);
+
+        } catch (NoSuchAlgorithmException e) {
+            return "Error";
+        }
+
+    }
+
     public static String fileSha256(String fileName) {
         File file = new File(fileName);
 
@@ -125,6 +145,17 @@ public class Crypto {
         String Hex = byteToHex(bytes);
 
         return Hex;
+    }
+
+    // Generate a random 256-bit in Base64 encoding
+    public static String random256Base64() {
+        SecureRandom random = new SecureRandom();
+
+        byte bytes[] = new byte[32];
+        random.nextBytes(bytes);
+
+        String randomBase64 = Base64.encodeToString(bytes, Base64.DEFAULT);
+        return randomBase64;
     }
 
     // Converts bytes to hex
@@ -306,6 +337,22 @@ public class Crypto {
         
     }
 
+    public static String signBase64(String message, PrivateKey privateKey){
+        try{
+            byte[] signatureBytes = sign(message, privateKey);
+            return Base64.encodeToString(signatureBytes, Base64.DEFAULT);
+        }
+        catch(NoSuchAlgorithmException e){
+            return "Error";
+        }
+        catch(InvalidKeyException e){
+            return "Error";
+        }
+        catch(SignatureException e){
+            return "Error";
+        }
+    }
+
     public static boolean signVerify(String message, byte[] signature, PublicKey publicKey) throws InvalidKeyException, NoSuchAlgorithmException, SignatureException{
         Signature sign = Signature.getInstance("SHA256withRSA");
 
@@ -317,6 +364,25 @@ public class Crypto {
         //byte[] signatureBytes = signature.getBytes();
         return sign.verify(signature);
 
+    }
+
+    public static boolean signVerifyBase64(String message, String signature, PublicKey publicKey){
+        byte[] byteSignature = Base64.decode(signature, Base64.DEFAULT);
+        try{
+            return signVerify(message, byteSignature, publicKey);
+        }
+        catch(InvalidKeyException e){
+            e.printStackTrace();
+            return false;
+        }
+        catch(NoSuchAlgorithmException e){
+            e.printStackTrace();
+            return false;
+        }
+        catch(SignatureException e){
+            e.printStackTrace();
+            return false;
+        }
     }
 
 

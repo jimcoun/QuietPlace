@@ -41,6 +41,7 @@ public abstract class Protocol {
 
     protected String identity; // User's identity
     protected String committedIdentity; // Committed identity
+    protected String commitmentSeed; // Random number for commitment generation
     protected PrivateKey privateKey; // User's private key
     protected PublicKey publicKey; // User's public key
     protected String caPublicKey; // Certificate Authority's public key
@@ -67,7 +68,8 @@ public abstract class Protocol {
         loadConfig(c);
         this.exactLocation = exactLocation;
 
-        committedIdentity = Crypto.commit(identity, Crypto.random256());
+        commitmentSeed = Crypto.random256();
+        committedIdentity = Crypto.commit(identity, commitmentSeed);
 
     }
 
@@ -160,11 +162,24 @@ public abstract class Protocol {
     // Runs the corresponding protocol
     public abstract void runProtocol();
 
-    protected String getSignHash(String data, String hs){
+    protected String getSignHash(String data, String signature){
+
+        String hashedSignature = Crypto.sha256Base64(signature);
         SignHash sh = new SignHash();
         sh.setData(data);
-        sh.setHs(hs);
+        sh.setHs(hashedSignature);
 
         return parser.toJSON(sh);
+    }
+
+    protected String fromSignHash(String data){
+        try {
+            SignHash signHash = (SignHash) parser.fromJSON(data, SignHash.class);
+            return signHash.getData();
+        }
+        catch(Exception e)
+        {
+            return "Error";
+        }
     }
 }

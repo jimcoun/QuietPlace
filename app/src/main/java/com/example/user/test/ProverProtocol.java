@@ -6,6 +6,8 @@ import android.util.Base64;
 import android.util.Log;
 
 
+import com.inaka.galgo.Galgo;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
@@ -31,7 +33,9 @@ public class ProverProtocol extends Protocol {
     private boolean receivedAllLPS = false;
 
     // Signatures generated during protocol execution
-    private String StartSignature;
+    private String startSignature;
+    private String responseSignature;
+    private String videoHashSignature;
 
     public ProverProtocol(android.content.Context c, String exactLocation){
 
@@ -74,12 +78,12 @@ public class ProverProtocol extends Protocol {
                     st.setTimestamp(currentTime);
                     st.setFrameHash("SAMPLEHASH");
                     String start = parser.toJSON(st);
+                    // Sign the start message
+                    startSignature = Crypto.signBase64(start, privateKey);
 
-                    StartSignature = Base64.encodeToString(Crypto.sign(start, privateKey));
-
-                    String startHs = getSignHash(start, StartSignature);
+                    String startHs = getSignHash(start, startSignature);
                     sendMessage(startHs); //Send start message
-                    Log.d("MYPROTOS", "Sending S: " + parser.toJSON(st));
+                    Log.d("MYPROTOS", "Sending S: " + startHs);
                     crPhase(); // Continue to challenge-response phase
 
 
@@ -147,15 +151,20 @@ public class ProverProtocol extends Protocol {
             Long time = System.currentTimeMillis() / 1000;
             Log.d("MYPROTOCHALLENGE", receivedText);
             try{
-                Challenge ch = (Challenge) parser.fromJSON(receivedText, Challenge.class);
+                String challenge = fromSignHash(receivedText); // Get the challenge from signed-hashed message
+                Challenge ch = (Challenge) parser.fromJSON(challenge, Challenge.class);
                 // Build and send response
                 if (!ch.getCommitment().equals(committedIdentity)) { // If i didn't send this message
                     Response re = new Response();
                     re.setCommitment(committedIdentity);
                     re.setN1(ch.getN1());
                     re.setN2(ch.getN2());
-                    sendMessage(parser.toJSON(re));
-                    Log.d("MYPROTORESPONSE", parser.toJSON(re));
+                    String response = parser.toJSON(re);
+                    responseSignature = Crypto.signBase64(response, privateKey);
+
+                    String responseHs = getSignHash(response, responseSignature);
+                    sendMessage(responseHs);
+                    Log.d("MYPROTOS", "Sending Response: " + responseHs);
                     receivedChallenges.add(ch.getCommitment());
                     if(receivedChallenges.equals(witnessesDiscovered)){
                         receivedAll = true;
@@ -183,8 +192,11 @@ public class ProverProtocol extends Protocol {
         vh.setCommitment(committedIdentity);
         vh.setHash("VIDEOHASH");
         String videoHash = parser.toJSON(vh);
-        sendMessage(videoHash);
-        Log.d("MYPROTOS", videoHash);
+        videoHashSignature = Crypto.signBase64(videoHash, privateKey);
+
+        String videoHashHs = getSignHash(videoHash, videoHashSignature);
+        sendMessage(videoHashHs);
+        Log.d("MYPROTOS", videoHashHs);
 
         Log.d("MYPROTO", "Start listening for LPS");
         lpsListListener(); // Start listening for LPSs and LISTs

@@ -4,6 +4,8 @@ package com.example.user.test;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import java.util.List;
+
 @JsonPropertyOrder({"commitment", "location", "k0", "ca", "timestamp"})
 class ProverRequest {
 
@@ -228,6 +230,99 @@ class VideoHash{
 
     public void setHash(String hash) {
         this.hash = hash;
+    }
+}
+
+@JsonPropertyOrder({"stHash", "chal", "res", "rw", "chSign", "vH", "acc"})
+class Lps{
+    private String stHash; // The hash of the start message
+    private String chal; // Challenge
+    private String res; // Response
+    private String rw; // Random number for commitment
+    private String chSign; // Challenge signature
+    private String vH; // videoHash received from prover
+    private boolean acc; // Whether accepted or not
+
+    // Getters
+    public String getStHash() {
+        return stHash;
+    }
+
+    public String getChal() {
+        return chal;
+    }
+
+    public String getRes() {
+        return res;
+    }
+
+    public String getRw() {
+        return rw;
+    }
+
+    public String getChSign() {
+        return chSign;
+    }
+
+    public String getvH() {
+        return vH;
+    }
+
+    public boolean isAcc() {
+        return acc;
+    }
+
+    // Setters
+    public void setStHash(String stHash) {
+        this.stHash = stHash;
+    }
+
+    public void setChal(String chal) {
+        this.chal = chal;
+    }
+
+    public void setRes(String res) {
+        this.res = res;
+    }
+
+    public void setRw(String rw) {
+        this.rw = rw;
+    }
+
+    public void setChSign(String chSign) {
+        this.chSign = chSign;
+    }
+
+    public void setvH(String vH) {
+        this.vH = vH;
+    }
+
+    public void setAns(boolean ans) {
+        this.acc = acc;
+    }
+}
+
+@JsonPropertyOrder({"discovered", "sentLps"})
+class ListMessage{
+    private List<String> discovered; // Discovered witnesses
+    private List<String> sentLps; // Witnesses that sent LPS
+
+    // Getters
+    public List<String> getDiscovered() {
+        return discovered;
+    }
+
+    public List<String> getSentLps() {
+        return sentLps;
+    }
+
+    // Setters
+    public void setDiscovered(List<String> discovered) {
+        this.discovered = discovered;
+    }
+
+    public void setSentLps(List<String> sentLps) {
+        this.sentLps = sentLps;
     }
 }
 

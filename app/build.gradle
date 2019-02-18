@@ -23,6 +23,12 @@ android {
     }
 }
 
+repositories {
+    maven {
+        url "https://jitpack.io"
+    }
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:27.1.1'
@@ -39,4 +45,5 @@ dependencies {
     implementation files('libs/jackson-annotations-2.9.8.jar')
     implementation 'io.reactivex:rxandroid:1.2.1'
     implementation 'io.reactivex:rxjava:1.2.1'
+    implementation 'com.github.inaka:galgo:v1.0.2'
 }

@@ -19,6 +19,9 @@ public class WitnessProtocol extends Protocol {
     private Handler handler = new Handler();
     private int N1, N2;
     private long timeChallengeSent;
+    private String challengeSignature;
+
+    private Lps lps;
 
     public WitnessProtocol(android.content.Context c, String exactLocation){
         super(c, exactLocation);
@@ -29,6 +32,7 @@ public class WitnessProtocol extends Protocol {
     public void runProtocol() {
 
         Log.d("MYPROTO", "Witness protocol initiated.");
+        lps = new Lps(); // Initiate LPS message
         proverIdentity = "";
         N1 = 123;
         N2 = 456;
@@ -151,13 +155,15 @@ public class WitnessProtocol extends Protocol {
             long time = System.currentTimeMillis() / 1000;
             Log.d("MYPROTO", receivedText);
             try{
-                Start st = (Start) parser.fromJSON(receivedText, Start.class);
+                String start = fromSignHash(receivedText);
+                Start st = (Start) parser.fromJSON(start, Start.class);
                 Kn = st.getLocationChain();
                 long timeDifference = time - st.getTimestamp();
                 boolean chainValid = LocationChain.checkChain(K0, exactLocation, Kn);
                 if (proverIdentity.equals(st.getCommitment()) && timeDifference < 10 && chainValid) {
                     Log.d("MYPROTO", "Received start message");
                     received = true;
+                    lps.setStHash(Crypto.sha256Base64(receivedText)); // Save the hash of the Start message
                     frameSubscription.unsubscribe();
                     frameSubscription = Subscriptions.empty();
                     sendChallenge();
@@ -186,8 +192,14 @@ public class WitnessProtocol extends Protocol {
         ch.setN1(N1);
         ch.setN2(N2);
         timeChallengeSent = System.currentTimeMillis() / 1000;
-        Log.d("MYPROTO", "Sending Challenge: " + parser.toJSON(ch));
-        sendMessage(parser.toJSON(ch));
+        String challenge = parser.toJSON(ch);
+        challengeSignature = Crypto.signBase64(challenge, privateKey);
+
+        String challengeHs = getSignHash(challenge, challengeSignature);
+        lps.setChal(challengeHs); // Set the Challenge in the LPS
+
+        Log.d("MYPROTO", "Sending Challenge: " + challengeHs);
+        sendMessage(challengeHs);
 
         Runnable r = new Runnable() {
             public void run() {
@@ -209,7 +221,8 @@ public class WitnessProtocol extends Protocol {
             long time = System.currentTimeMillis() / 1000;
             Log.d("MYPROTO", receivedText);
             try{
-                Response re = (Response) parser.fromJSON(receivedText, Response.class);
+                String response = fromSignHash(receivedText);
+                Response re = (Response) parser.fromJSON(response, Response.class);
                 // Perform checks
                 long timeDifference = time - timeChallengeSent;
                 if (proverIdentity.equals(re.getCommitment()) && (timeDifference < 15) &&
@@ -258,7 +271,8 @@ public class WitnessProtocol extends Protocol {
             long time = System.currentTimeMillis() / 1000;
             Log.d("MYPROTO", receivedText);
             try{
-                VideoHash vh = (VideoHash) parser.fromJSON(receivedText, VideoHash.class);
+                String videoHash = fromSignHash(receivedText);
+                VideoHash vh = (VideoHash) parser.fromJSON(videoHash, VideoHash.class);
                 // Perform checks
                 if (proverIdentity.equals(vh.getCommitment())) {
                     receivedHash = true;
