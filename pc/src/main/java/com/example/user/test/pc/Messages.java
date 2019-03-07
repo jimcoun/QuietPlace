@@ -1,4 +1,4 @@
-package com.example.user.test;
+package com.example.user.test.pc;
 
 // ProverRequest
 
@@ -208,6 +208,7 @@ class Response {
         this.n2 = n2;
     }
 }
+
 @JsonPropertyOrder({"commitment", "hash"})
 class VideoHash{
     private String commitment;
@@ -335,7 +336,7 @@ class ListMessage{
     }
 }
 
-@JsonPropertyOrder({"pId", "rp", "start", "startSignature", "responseSignatures", "lps", "list", "videoHashSignature"})
+@JsonPropertyOrder({"pId", "rp", "start", "startSignature", "responseSignatures", "lps", "list"})
 class Lpa{
     private String pId; // Identity of the Prover
     private String rp; // Random number for prover commitment
@@ -344,7 +345,6 @@ class Lpa{
     private List<String> responseSignatures; // The signature of each response
     private List<String> lps; // The received LPS messages
     private List<String> list; // The received LIST messages
-    private String videoHashSignature; // The signature of the videoHash message
 
     // Getters
     public String getpId() {
@@ -375,10 +375,6 @@ class Lpa{
         return list;
     }
 
-    public String getVideoHashSignature() {
-        return videoHashSignature;
-    }
-
     // Setters
     public void setpId(String pId) {
         this.pId = pId;
@@ -396,8 +392,8 @@ class Lpa{
         this.startSignature = startSignature;
     }
 
-    public void setResponseSignatures(List<String> responseSignature) {
-        this.responseSignatures = responseSignature;
+    public void setResponseSignatures(List<String> responseSignatures) {
+        this.responseSignatures = responseSignatures;
     }
 
     public void setLps(List<String> lps) {
@@ -407,10 +403,6 @@ class Lpa{
     public void setList(List<String> list) {
         this.list = list;
     }
-
-    public void setVideoHashSignature(String videoHashSignature) {
-        this.videoHashSignature = videoHashSignature;
-    }
 }
 
 @JsonPropertyOrder({"caId", "start", "pId", "accepted"})
@@ -418,7 +410,6 @@ class VerifierSegment{
     private String caId; // CAs identity
     private String start; // The start message
     private String pId; // Prover identity
-    private String videoHash; // The videoHash
     private boolean accepted; // The CAs answer
 
     // Getters
@@ -432,10 +423,6 @@ class VerifierSegment{
 
     public String getpId() {
         return pId;
-    }
-
-    public String getVideoHash() {
-        return videoHash;
     }
 
     public boolean isAccepted() {
@@ -455,16 +442,11 @@ class VerifierSegment{
         this.pId = pId;
     }
 
-    public void setVideoHash(String videoHash) {
-        this.videoHash = videoHash;
-    }
-
     public void setAccepted(boolean accepted) {
         this.accepted = accepted;
     }
 }
 
-@JsonPropertyOrder({"pId", "start", "verifierSegment", "ki", "li"})
 class LocationProof{
     private String pId; // The prover identity
     private String start; // The start message
@@ -519,8 +501,8 @@ class LocationProof{
 @JsonPropertyOrder({"commitment", "type", "data"})
 class EncryptedMessage{
     private String commitment;
-    private int type; // 0 = LPS, 1 = LIST, 2 = LPA, 3 = VS, 4 = LP
-    private String data; // The encrypted message (LPS, LIST, LPA, VS, LP)
+    private int type; // 0 = LPS, 1 = LIST
+    private String data; // The encrypted message (LPS or LIST)
     private String sign; // Signature to the data
     private String key; // Symmetric key encrypted with Public Key of CA
     private String ivSpec; // The initialization vector used for the symmetric encryption
@@ -672,37 +654,3 @@ class ProtocolConfig{
         this.retryCount = retryCount;
     }
 }
-
-@JsonPropertyOrder({"committedIdentity", "privateKey", "publicKey", "caPublicKey", "timeout", "retryCount"})
-class AuxInfo{
-    private String committedIdentity;
-    private String location;
-    private List<String> kchain;
-
-    // Getters
-    public String getCommittedIdentity() {
-        return committedIdentity;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public List<String> getKchain() {
-        return kchain;
-    }
-
-    // Setters
-    public void setCommittedIdentity(String identity) {
-        this.committedIdentity = identity;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public void setKchain(List<String> kchain) {
-        this.kchain = kchain;
-    }
-}
-

@@ -1,9 +1,12 @@
 package com.example.user.test;
 
 
+import android.app.Activity;
+import android.content.Context;
 import android.os.Handler;
 import android.util.Base64;
 import android.util.Log;
+import android.widget.TextView;
 
 
 import com.inaka.galgo.Galgo;
@@ -13,7 +16,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
@@ -32,12 +37,19 @@ public class ProverProtocol extends Protocol {
     private boolean receivedAll = false;
     private boolean receivedAllLPS = false;
 
+    // Things to keep during execution
+    private String start; // The start message
+    private List<String> lpsReceived = new ArrayList<>(); // All LPSs received
+    private List<String> listReceived = new ArrayList<>(); // All LISTs received
+
     // Signatures generated during protocol execution
     private String startSignature;
-    private String responseSignature;
+    private List<String> responseSignatures = new ArrayList<>(); // Signatures of responses
     private String videoHashSignature;
 
-    public ProverProtocol(android.content.Context c, String exactLocation){
+    private final TextView numberToSpeak = (TextView) ((Activity)c).findViewById(R.id.numberToSpeak);
+
+    public ProverProtocol(Context c, String exactLocation){
 
         super(c, exactLocation);
 
@@ -56,7 +68,7 @@ public class ProverProtocol extends Protocol {
         pr.setCommitment(committedIdentity);
         pr.setLocation(exactLocation);
         pr.setk0(K0);
-        pr.setCa(caPublicKey);
+        pr.setCa(caId);
         pr.setTimestamp(System.currentTimeMillis() / 1000);
 
         String proverRequest = parser.toJSON(pr);
@@ -77,7 +89,7 @@ public class ProverProtocol extends Protocol {
                     st.setLocationChain(Kn);
                     st.setTimestamp(currentTime);
                     st.setFrameHash("SAMPLEHASH");
-                    String start = parser.toJSON(st);
+                    start = parser.toJSON(st);
                     // Sign the start message
                     startSignature = Crypto.signBase64(start, privateKey);
 
@@ -160,10 +172,12 @@ public class ProverProtocol extends Protocol {
                     re.setN1(ch.getN1());
                     re.setN2(ch.getN2());
                     String response = parser.toJSON(re);
-                    responseSignature = Crypto.signBase64(response, privateKey);
+                    String resSignature = Crypto.signBase64(response, privateKey);
+                    responseSignatures.add(resSignature);
 
-                    String responseHs = getSignHash(response, responseSignature);
+                    String responseHs = getSignHash(response, resSignature);
                     sendMessage(responseHs);
+                    numberToSpeak.setText(Integer.toString(ch.getN2()));
                     Log.d("MYPROTOS", "Sending Response: " + responseHs);
                     receivedChallenges.add(ch.getCommitment());
                     if(receivedChallenges.equals(witnessesDiscovered)){
@@ -211,7 +225,7 @@ public class ProverProtocol extends Protocol {
 
             }
         };
-        handler.postDelayed(r, 15*1000);
+        handler.postDelayed(r, 30*1000);
     }
 
     private void lpsListListener() {
@@ -227,9 +241,11 @@ public class ProverProtocol extends Protocol {
                 Log.d("MYPROTOWIT", em.getCommitment());
                 if(em.getType() == 0) {
                     witnessesSentLPS.add(em.getCommitment());
+                    lpsReceived.add(receivedText);
                 }
                 else if(em.getType() == 1){
                     witnessesSentList.add(em.getCommitment());
+                    listReceived.add(receivedText);
                 }
             }
             catch(Exception e){e.printStackTrace();}
@@ -238,7 +254,7 @@ public class ProverProtocol extends Protocol {
             if(witnessesSentLPS.equals(witnessesDiscovered) && witnessesSentList.equals(witnessesDiscovered)){
                 receivedAllLPS = true;
                 frameSubscription.unsubscribe();
-                finishingPhase();
+                createLpa();
             }
         }, error -> {
             receivedMessages.add("error");
@@ -246,9 +262,44 @@ public class ProverProtocol extends Protocol {
         });
     }
 
-    private void finishingPhase() {
+    private void createLpa() {
         receivedAll = false;
         Log.d("MYPROTO", "Now we have everything we need!! :D");
+
+        Lpa lpa = new Lpa();
+        lpa.setpId(identity);
+        lpa.setRp(commitmentSeed);
+        lpa.setStart(start);
+        lpa.setStartSignature(startSignature);
+        lpa.setLps(lpsReceived);
+        lpa.setList(listReceived);
+        lpa.setResponseSignatures(responseSignatures);
+        lpa.setVideoHashSignature(videoHashSignature);
+
+        String lpaJSON = parser.toJSON(lpa); // JSON representation of LPA
+        Log.d("MYPROTO", "LPA: " + lpaJSON);
+        String encryptedLpa = getEncryptedMessage(lpaJSON, caPublicKey, 2, false);
+        largeLog("MYPROTO", encryptedLpa);
+
+        AuxInfo auxInfo = new AuxInfo();
+        auxInfo.setCommittedIdentity(committedIdentity);
+        auxInfo.setLocation(exactLocation);
+        auxInfo.setKchain(Arrays.asList(Kchain));
+        String auxInfoJSON = parser.toJSON(auxInfo);
+
+        Log.d("MYPROTO", "auxInfo: " + auxInfoJSON);
+
+    }
+
+
+
+    public static void largeLog(String tag, String content) {
+        if (content.length() > 4000) {
+            Log.d(tag, content.substring(0, 4000));
+            largeLog(tag, content.substring(4000));
+        } else {
+            Log.d(tag, content);
+        }
     }
 
 

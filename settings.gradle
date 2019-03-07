@@ -1,1 +1,1 @@
-include ':app', ':quiet'
+include ':app', ':quiet', ':pc'

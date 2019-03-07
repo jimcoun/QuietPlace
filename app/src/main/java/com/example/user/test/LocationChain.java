@@ -23,6 +23,7 @@ public class LocationChain {
         boolean result = checkChain(Kchain[2], "8G95XQ", Kchain[5]);
         System.out.println(result);
 
+        System.out.println(shortenPlusCode(L0, 4));
     }
 
     // Method that returns random number K0
@@ -85,6 +86,14 @@ public class LocationChain {
         else
             return false;
 
+    }
+
+    public static String shortenPlusCode(String plusCode, int level){
+
+        for(int i=0; i<level; i++){
+            plusCode = plusCode.substring(0, plusCode.length() - 2);
+        }
+        return plusCode;
     }
 
 }

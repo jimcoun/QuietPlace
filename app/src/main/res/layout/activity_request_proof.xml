@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:text="TextView"
+        android:text="NO LOCATION!"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -40,19 +40,50 @@
         android:id="@+id/receivedText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="112dp"
-        android:text="Received text here"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="184dp"
+        android:text="Speak the numbers as they appear below:"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/plusCodeText" />
 
     <TextView
-        android:id="@+id/receivedStatus"
+        android:id="@+id/numberToSpeak"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:text="Number will show here"
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/receivedText" />
+
+    <Button
+        android:id="@+id/caButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:text="Status here"
+        android:layout_marginTop="44dp"
+        android:text="CA emulation"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/receivedText" />
+        app:layout_constraintTop_toBottomOf="@+id/numberToSpeak" />
+
+    <Button
+        android:id="@+id/lpButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="44dp"
+        android:text="create lp"
+        app:layout_constraintStart_toEndOf="@+id/caButton"
+        app:layout_constraintTop_toBottomOf="@+id/numberToSpeak" />
+
+    <Button
+        android:id="@+id/verifierButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="44dp"
+        android:text="verifier"
+        app:layout_constraintStart_toEndOf="@+id/lpButton"
+        app:layout_constraintTop_toBottomOf="@+id/numberToSpeak" />
 </android.support.constraint.ConstraintLayout>

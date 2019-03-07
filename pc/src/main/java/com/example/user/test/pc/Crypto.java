@@ -1,27 +1,29 @@
-package com.example.user.test;
+package com.example.user.test.pc;
 
-import android.util.Base64;
-import android.util.Log;
 
-import java.io.FileOutputStream;
-import java.io.Writer;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-
 import java.nio.file.Files;
-
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
+import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -47,7 +49,7 @@ public class Crypto {
         System.out.println("Generating keys");
         keyPairGenerator("kleidi");
 
-        System.out.println(fileSha256("78.jpg"));
+        // System.out.println(fileSha256("78.jpg"));
 
         try {
 //            PrivateKey privateKey = getPrivate("kleidib.key");
@@ -57,6 +59,7 @@ public class Crypto {
             PublicKey publicKey = getPublicFromString("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDMbxrcYL890PHI7Ls7x2ScD+GojZgPQaebiYnQKtVjJYy65piQLzksvxVe2ldLoUgP7zUBsu9o/G0YGse9+I4b1pBoFZITPMZJAGGM9WpyP/dMY29WldLOQtYEuDvMI8QLrHbb/At7QivlasvC4/711FDok4gcbPKOGGfZNe9weQIDAQAB");
             String msg = "This is clear text!";
             String encrypted = encryptText(msg, privateKey);
+            System.out.println(encrypted);
 
             String decrypted = decryptText(encrypted, publicKey);
             System.out.println(decrypted);
@@ -114,7 +117,7 @@ public class Crypto {
             // Compute the message digest
             byte[] digest = md.digest();
 
-            return Base64.encodeToString(digest, Base64.DEFAULT);
+            return Base64.getEncoder().encodeToString(digest);
 
         } catch (NoSuchAlgorithmException e) {
             return "Error";
@@ -159,7 +162,7 @@ public class Crypto {
         byte bytes[] = new byte[32];
         random.nextBytes(bytes);
 
-        String randomBase64 = Base64.encodeToString(bytes, Base64.DEFAULT);
+        String randomBase64 = Base64.getEncoder().encodeToString(bytes);
         return randomBase64;
     }
 
@@ -274,8 +277,9 @@ public class Crypto {
             System.out.println("File error!");
         }
         */
-        System.out.println("Private key: " + Base64.encodeToString(pvt, Base64.DEFAULT));
-        System.out.println("Public key: " + Base64.encodeToString(pub, Base64.DEFAULT));
+
+        System.out.println("Private key: " + Base64.getEncoder().encodeToString(pvt));
+        System.out.println("Public key: " + Base64.getEncoder().encodeToString(pub));
     }
 
     // Asymmetric (RSA) cryptography helpers
@@ -297,14 +301,14 @@ public class Crypto {
 
     // Get keys from Strings in Base64 encoding
     public static PrivateKey getPrivateFromString(String pvt) throws Exception {
-        byte[] keyBytes = Base64.decode(pvt, Base64.DEFAULT);
+        byte[] keyBytes = Base64.getDecoder().decode(pvt);
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         return kf.generatePrivate(spec);
     }
 
     public static PublicKey getPublicFromString(String pub) throws Exception {
-        byte[] keyBytes = Base64.decode(pub, Base64.DEFAULT);
+        byte[] keyBytes = Base64.getDecoder().decode(pub);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         return kf.generatePublic(spec);
@@ -314,7 +318,7 @@ public class Crypto {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.ENCRYPT_MODE, key);
-            return Base64.encodeToString(cipher.doFinal(msg.getBytes("UTF-8")), Base64.DEFAULT);
+            return Base64.getEncoder().encodeToString(cipher.doFinal(msg.getBytes("UTF-8")));
         }
         catch (NoSuchAlgorithmException | NoSuchPaddingException |
                 UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException e){
@@ -326,10 +330,12 @@ public class Crypto {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, key);
-            return new String(cipher.doFinal(Base64.decode(msg, Base64.DEFAULT)), "UTF-8");
+            // return new String(cipher.doFinal(Base64.getDecoder().decode(msg)), "UTF-8");
+            return new String(cipher.doFinal(Base64.getDecoder().decode(msg)), "UTF-8");
         }
         catch (NoSuchAlgorithmException | NoSuchPaddingException |
                 UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException e){
+            e.printStackTrace();
             return "Error";
         }
 
@@ -363,7 +369,7 @@ public class Crypto {
             ci.init(Cipher.ENCRYPT_MODE, key, ivSpec); //Initialize Cipher for encryption
             byte[] input = data.getBytes("UTF-8");
             byte[] encoded = ci.doFinal(input);
-            return Base64.encodeToString(encoded, Base64.DEFAULT);
+            return Base64.getEncoder().encodeToString(encoded);
 
         } catch (NoSuchPaddingException e) {
             e.printStackTrace();
@@ -396,7 +402,7 @@ public class Crypto {
             Cipher ci = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
             // Decode from Base64
-            byte[] encodedBytes = Base64.decode(encoded, Base64.DEFAULT);
+            byte[] encodedBytes = Base64.getDecoder().decode(encoded);
 
             //Decrypt
             ci.init(Cipher.DECRYPT_MODE, key, ivSpec); //Initialize Cipher for decryption
@@ -445,7 +451,7 @@ public class Crypto {
     public static String signBase64(String message, PrivateKey privateKey){
         try{
             byte[] signatureBytes = sign(message, privateKey);
-            return Base64.encodeToString(signatureBytes, Base64.DEFAULT);
+            return Base64.getEncoder().encodeToString(signatureBytes);
         }
         catch(NoSuchAlgorithmException e){
             return "Error";
@@ -472,7 +478,7 @@ public class Crypto {
     }
 
     public static boolean signVerifyBase64(String message, String signature, PublicKey publicKey){
-        byte[] byteSignature = Base64.decode(signature, Base64.DEFAULT);
+        byte[] byteSignature = Base64.getDecoder().decode(signature);
         try{
             return signVerify(message, byteSignature, publicKey);
         }
@@ -487,41 +493,6 @@ public class Crypto {
         catch(SignatureException e){
             e.printStackTrace();
             return false;
-        }
-    }
-
-    public static String getEncryptedMessage(String data, String commitment, Key rsaKey, PrivateKey signKey, int type, boolean isSignatureRequired) {
-        ParseJSON parser = new ParseJSON();
-        try {
-            // Generate symmetric key
-            SecretKey secretKey = Crypto.getKey();
-            // Convert key to Base64
-            String secretKeyBase64 = android.util.Base64.encodeToString(secretKey.getEncoded(), Base64.DEFAULT);
-            Log.d("MYPROTOCRYPTO", "secretKeyBase64: " + secretKeyBase64);
-            // Generate initialization vector and encode to Base64
-            IvParameterSpec ivSpec = Crypto.getIvSpec();
-            String ivSpecBase64 = android.util.Base64.encodeToString(ivSpec.getIV(), Base64.DEFAULT);
-            // Encrypt data using symmetric key
-            String encryptedData = Crypto.symmetricEncrypt(data, secretKey, ivSpec);
-            // Encrypt symmetric key using CAs public key
-            String encryptedKey = Crypto.encryptText(secretKeyBase64, rsaKey);
-            Log.d("MYPROTOCRYPTO", "encryptedSecretKeyBase64: " + encryptedKey);
-
-            EncryptedMessage em = new EncryptedMessage();
-            em.setCommitment(commitment);
-            em.setType(type);
-            em.setData(encryptedData);
-            em.setKey(encryptedKey);
-            em.setIvSpec(ivSpecBase64);
-
-            if(isSignatureRequired){
-                em.setSign(Crypto.signBase64(data, signKey));
-            }
-
-            return parser.toJSON(em);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return "Error";
         }
     }
 

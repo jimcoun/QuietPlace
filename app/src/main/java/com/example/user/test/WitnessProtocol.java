@@ -1,9 +1,16 @@
 package com.example.user.test;
 
 import android.os.Handler;
+import android.util.Base64;
 import android.util.Log;
 
 import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.List;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -17,11 +24,12 @@ public class WitnessProtocol extends Protocol {
     private boolean receivedHash;
     private String proverIdentity;
     private Handler handler = new Handler();
-    private int N1, N2;
     private long timeChallengeSent;
     private String challengeSignature;
+    private int n1, n2;
 
     private Lps lps;
+    private ListMessage list;
 
     public WitnessProtocol(android.content.Context c, String exactLocation){
         super(c, exactLocation);
@@ -33,9 +41,9 @@ public class WitnessProtocol extends Protocol {
 
         Log.d("MYPROTO", "Witness protocol initiated.");
         lps = new Lps(); // Initiate LPS message
+        lps.setId(identity); // Set the identity in the LPS
+        lps.setRw(commitmentSeed); // Set the commitment seed in the LPS
         proverIdentity = "";
-        N1 = 123;
-        N2 = 456;
         proverRequestListener(); // Start listening for Prover Requests
 
         Runnable r = new Runnable() {
@@ -71,7 +79,7 @@ public class WitnessProtocol extends Protocol {
                     sendWitnessPresence();
                 }
                 else{
-                    Log.d("MYPROTO", "Not a valid PR");
+                    Log.d("MYPROTO", "Not a valid PR. Wrong location or delayed answer.");
                 }
             }
             catch(Exception e){
@@ -185,18 +193,22 @@ public class WitnessProtocol extends Protocol {
     }
 
     private void sendChallenge(){
+        SecureRandom secureRandom = new SecureRandom();
+        n1 = secureRandom.nextInt(1000000000);
+        n2 = secureRandom.nextInt(1000);
         received = false; // No response received yet
         responseListener(); // Start listening for responses
         Challenge ch = new Challenge();
         ch.setCommitment(committedIdentity);
-        ch.setN1(N1);
-        ch.setN2(N2);
+        ch.setN1(n1);
+        ch.setN2(n2);
         timeChallengeSent = System.currentTimeMillis() / 1000;
         String challenge = parser.toJSON(ch);
         challengeSignature = Crypto.signBase64(challenge, privateKey);
 
         String challengeHs = getSignHash(challenge, challengeSignature);
         lps.setChal(challengeHs); // Set the Challenge in the LPS
+        lps.setChSign(challengeSignature); // Set the challenge signature in the LPS
 
         Log.d("MYPROTO", "Sending Challenge: " + challengeHs);
         sendMessage(challengeHs);
@@ -225,14 +237,26 @@ public class WitnessProtocol extends Protocol {
                 Response re = (Response) parser.fromJSON(response, Response.class);
                 // Perform checks
                 long timeDifference = time - timeChallengeSent;
-                if (proverIdentity.equals(re.getCommitment()) && (timeDifference < 15) &&
-                        (N1 == re.getN1()) && (N2 == re.getN2())) {
-                    received = true;
-                    Log.d("MYPROTO", "Response is OK");
-                    waitForHash();
+                // Check if the reponse comes from the right Prover
+                if (proverIdentity.equals(re.getCommitment())) {
+                    lps.setRes(receivedText); // Set the Response in the LPS
+                    // Check if the response is correct
+                    if ((timeDifference < 10) && (n1 == re.getN1()) && (n2 == re.getN2())) {
+                        received = true;
+                        lps.setAcc(true); // Add accepted to the LPS
+                        Log.d("MYPROTO", "Response is OK");
+                        waitForHash();
+
+                    }
+                    else{
+                        received = true;
+                        Log.d("MYPROTO", "Prover sent Response but it is wrong!");
+                        lps.setAcc(false); // Add not accepted to the LPS
+                        waitForHash();
+                    }
                 }
                 else{
-                    Log.d("MYPROTO","Not a valid Response message!");
+                    Log.d("MYPROTO","Not a response from the expected Prover!");
                 }
             }
             catch(Exception e){
@@ -277,6 +301,10 @@ public class WitnessProtocol extends Protocol {
                 if (proverIdentity.equals(vh.getCommitment())) {
                     receivedHash = true;
                     Log.d("MYPROTO", "Received video hash");
+                    lps.setvH(receivedText); // Set the videoHash in the LPS
+                    frameSubscription.unsubscribe();
+                    frameSubscription = Subscriptions.empty();
+                    Log.d("MYPROTO", "LPS is: " + parser.toJSON(lps));
                     sendLPS();
                 }
                 else{
@@ -286,6 +314,7 @@ public class WitnessProtocol extends Protocol {
             catch(Exception e){
                 e.printStackTrace();
                 Log.d("MYPROTOEXC", "Not a VideoHash message");
+                Log.d("MYPROTOEXC", e.toString());
             }
             receivedMessages.add(receivedText);
             receivedTimestamps.add(time);
@@ -298,19 +327,18 @@ public class WitnessProtocol extends Protocol {
     private void sendLPS(){
 
         lpsListener();
-        EncryptedMessage lps = new EncryptedMessage();
-        lps.setCommitment(committedIdentity);
-        lps.setType(0);
-        lps.setData("Data content of the LPS");
-        Log.d("MYPROTO", "Sending LPS: " + parser.toJSON(lps));
-        sendMessage(parser.toJSON(lps));
+        String encryptedLps = getEncryptedMessage(parser.toJSON(lps), caPublicKey, 0, false);
+        Log.d("MYPROTO", "LPS: " + parser.toJSON(lps));
+        Log.d("MYPROTO", "Sending encrypted LPS: " + encryptedLps);
+        Log.d("MYPROTO", "LPS size: " + Integer.toString(encryptedLps.getBytes().length));
+        sendMessage(encryptedLps);
 
         Runnable r = new Runnable() {
             public void run() {
                 sendList();
             }
         };
-        handler.postDelayed(r, 10*1000);
+        handler.postDelayed(r, 17*1000);
 
     }
 
@@ -318,14 +346,15 @@ public class WitnessProtocol extends Protocol {
         frameSubscription.unsubscribe();
         frameSubscription = FrameReceiverObservable.create(c, "ultrasonic-experimental").subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(buf -> {
             String receivedText = new String(buf, Charset.forName("UTF-8"));
+            Log.d("MYPROTOSPECIAL", Integer.toString(receivedText.getBytes().length));
             long time = System.currentTimeMillis() / 1000;
             Log.d("MYPROTO", receivedText);
             try{
-                EncryptedMessage lps = (EncryptedMessage) parser.fromJSON(receivedText, EncryptedMessage.class);
+                EncryptedMessage encLps = (EncryptedMessage) parser.fromJSON(receivedText, EncryptedMessage.class);
                 // Perform checks
-                if (lps.getType() == 0) {
-                    witnessesSentLPS.add(lps.getCommitment());
-                    Log.d("MYPROTO", "Got LPS from: " + lps.getCommitment());
+                if (encLps.getType() == 0) {
+                    witnessesSentLPS.add(encLps.getCommitment());
+                    Log.d("MYPROTO", "Got LPS from: " + encLps.getCommitment());
                     }
                 else{
                     Log.d("MYPROTO","Not a valid LPS message!");
@@ -344,13 +373,14 @@ public class WitnessProtocol extends Protocol {
     }
 
     private void sendList(){
-        EncryptedMessage list = new EncryptedMessage();
-        list.setCommitment(committedIdentity);
-        list.setType(1);
-        list.setData("Content of LIST message");
+        ListMessage list = new ListMessage();
+        list.setDiscovered(witnessesDiscovered);
+        list.setSentLps(witnessesSentLPS);
 
-        Log.d("MYPROTO", "Sending LIST message: " + parser.toJSON(list));
-        sendMessage(parser.toJSON(list));
+        String encList = getEncryptedMessage(parser.toJSON(list), caPublicKey, 1, true);
+
+        Log.d("MYPROTO", "Sending LIST message: " + encList);
+        sendMessage(encList);
         Log.d("MYPROTO", "End of witness protocol.");
 
         frameSubscription.unsubscribe();

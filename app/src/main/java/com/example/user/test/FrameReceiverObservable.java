@@ -13,7 +13,7 @@ import rx.Subscription;
 public class FrameReceiverObservable {
 
     private static final int TIEMOUT = 30;
-    private static final int BUFFER_SIZE = 1024;
+    private static final int BUFFER_SIZE = 2000;
 
     public static Observable<byte[]> create(Context context, String profile) {
         return Observable.create(subscriber -> {

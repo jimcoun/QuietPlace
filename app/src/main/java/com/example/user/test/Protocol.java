@@ -1,6 +1,7 @@
 package com.example.user.test;
 
 import android.os.Handler;
+import android.util.Base64;
 import android.util.Log;
 import android.content.Context;
 
@@ -17,12 +18,17 @@ import java.net.SocketException;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Scanner;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -44,7 +50,8 @@ public abstract class Protocol {
     protected String commitmentSeed; // Random number for commitment generation
     protected PrivateKey privateKey; // User's private key
     protected PublicKey publicKey; // User's public key
-    protected String caPublicKey; // Certificate Authority's public key
+    protected PublicKey caPublicKey; // Certificate Authority's public key
+    protected String caId; // The identity of the CA, used to check compatibility between users
 
     protected String exactLocation; // Accurate location in plus code format
     protected String K0; // Random number used to build location chain
@@ -137,9 +144,10 @@ public abstract class Protocol {
             ProtocolConfig pc = parser.fromJSON(configJSON);
 
             this.identity = pc.getIdentity();
+            this.caId = pc.getCaId();
             this.privateKey = Crypto.getPrivateFromString(pc.getPrivateKey());
             this.publicKey = Crypto.getPublicFromString(pc.getPublicKey());
-            this.caPublicKey = pc.getCaPublicKey();
+            this.caPublicKey = Crypto.getPublicFromString(pc.getCaPublicKey());
         }
         catch (IOException e){}
         catch (Exception e) {}
@@ -182,4 +190,52 @@ public abstract class Protocol {
             return "Error";
         }
     }
+
+    protected String getEncryptedMessage(String data, Key rsaKey, int type, boolean isSignatureRequired) {
+        try {
+            // Generate symmetric key
+            SecretKey secretKey = Crypto.getKey();
+            // Convert key to Base64
+            String secretKeyBase64 = android.util.Base64.encodeToString(secretKey.getEncoded(), Base64.DEFAULT);
+            Log.d("MYPROTOCRYPTO", "secretKeyBase64: " + secretKeyBase64);
+            // Generate initialization vector and encode to Base64
+            IvParameterSpec ivSpec = Crypto.getIvSpec();
+            String ivSpecBase64 = android.util.Base64.encodeToString(ivSpec.getIV(), Base64.DEFAULT);
+            // Encrypt data using symmetric key
+            String encryptedData = Crypto.symmetricEncrypt(data, secretKey, ivSpec);
+            // Encrypt symmetric key using CAs public key
+            String encryptedKey = Crypto.encryptText(secretKeyBase64, rsaKey);
+            Log.d("MYPROTOCRYPTO", "encryptedSecretKeyBase64: " + encryptedKey);
+
+            EncryptedMessage em = new EncryptedMessage();
+            em.setCommitment(committedIdentity);
+            em.setType(type);
+            em.setData(encryptedData);
+            em.setKey(encryptedKey);
+            em.setIvSpec(ivSpecBase64);
+
+            if(isSignatureRequired){
+                em.setSign(Crypto.signBase64(data, privateKey));
+            }
+
+            return parser.toJSON(em);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return "Error";
+        }
+    }
+
+    private String fromEncryptedMessage(EncryptedMessage encryptedMessage, Key key) {
+        String decryptedKeyBase64 = Crypto.decryptText(encryptedMessage.getKey(), privateKey);
+        byte[] decryptedKey = Base64.decode(decryptedKeyBase64, Base64.DEFAULT);
+        SecretKey symmetricKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
+
+        // Get IVSpec
+        byte[] ivSpecBytes = Base64.decode(encryptedMessage.getIvSpec(), Base64.DEFAULT);
+        IvParameterSpec ivSpec = new IvParameterSpec(ivSpecBytes);
+        // Decrypt the data
+        String decryptedData = Crypto.symmetricDecrypt(encryptedMessage.getData(), symmetricKey, ivSpec);
+        return decryptedData;
+    }
+
 }

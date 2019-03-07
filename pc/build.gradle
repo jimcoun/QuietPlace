@@ -1,0 +1,12 @@
+apply plugin: 'java-library'
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation files('libs/jackson-annotations-2.9.8.jar')
+    implementation files('libs/jackson-core-2.9.8.jar')
+    implementation files('libs/jackson-databind-2.9.8.jar')
+    implementation files('libs/openlocationcode-1.0.2.jar')
+}
+
+sourceCompatibility = "7"
+targetCompatibility = "7"
